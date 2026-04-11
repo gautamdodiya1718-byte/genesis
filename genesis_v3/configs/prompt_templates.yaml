@@ -1,0 +1,97 @@
+styles:
+  - photorealistic
+  - oil painting
+  - watercolor
+  - digital art
+  - pencil sketch
+  - cinematic
+  - studio photography
+  - illustration
+  - concept art
+  - hyperrealistic
+
+quality_suffixes:
+  - highly detailed
+  - sharp focus
+  - professional photography
+  - 4k resolution
+  - masterpiece
+  - award winning
+  - beautiful composition
+  - vivid colors
+
+negative_prompts:
+  default: "blurry, low quality, low resolution, distorted, deformed, ugly, duplicate,
+            watermark, text, signature, noisy, grainy, overexposed, underexposed"
+  portrait: "blurry, low quality, bad anatomy, extra limbs, deformed face,
+             watermark, text, signature"
+  landscape: "blurry, low quality, distorted, ugly, watermark, text"
+
+templates:
+  landscape:
+    subjects:
+      - mountain at sunset
+      - tropical beach with clear water
+      - autumn forest with fallen leaves
+      - desert canyon at golden hour
+      - misty fjord in Norway
+      - rolling green hills of Ireland
+      - frozen tundra with northern lights
+      - cherry blossom trees in spring
+      - volcanic island emerging from ocean
+      - ancient forest with sunlight rays
+
+  portrait:
+    subjects:
+      - elderly craftsman at work
+      - musician performing on stage
+      - scientist in a laboratory
+      - chef preparing a gourmet meal
+      - young artist painting
+      - explorer in a jungle
+      - astronaut in space
+      - warrior in ancient armor
+
+  architecture:
+    subjects:
+      - gothic cathedral interior
+      - modern glass skyscraper
+      - ancient Roman ruins
+      - Japanese pagoda in mist
+      - futuristic city skyline
+      - medieval castle on a cliff
+      - underground cave temple
+      - Art Deco skyscraper lobby
+
+  nature:
+    subjects:
+      - butterfly macro photography
+      - underwater coral reef
+      - eagle in mid-flight
+      - wolf howling at moon
+      - thunderstorm over prairie
+      - redwood forest canopy
+      - tide pools at low tide
+      - geysers erupting in Iceland
+
+  abstract:
+    subjects:
+      - fluid color explosion
+      - geometric fractals
+      - light refraction through prism
+      - neural network visualization
+      - time lapse star trails
+      - microscopic crystal structure
+      - aurora borealis patterns
+      - neon light reflections in rain
+
+  animals:
+    subjects:
+      - wolf pack in winter forest
+      - tiger drinking from river
+      - whale breaching at sunset
+      - hummingbird in flight
+      - great white shark underwater
+      - snow leopard on mountain
+      - family of elephants at waterhole
+      - octopus camouflaged on reef

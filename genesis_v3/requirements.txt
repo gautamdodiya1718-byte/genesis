@@ -1,0 +1,59 @@
+# Genesis — Unified Generative AI System
+# Requirements
+
+# ── Core ML ───────────────────────────────────────────────────
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.24.0
+
+# ── Diffusion / Generation ────────────────────────────────────
+diffusers>=0.21.0          # SD 1.5, LCM, LCMScheduler, AutoPipeline
+transformers>=4.35.0       # CLIP, T5, BLIP, ViT-GPT2
+accelerate>=0.24.0         # Mixed precision, model loading
+huggingface_hub>=0.19.0    # Auto-download models
+
+# ── Image Processing ──────────────────────────────────────────
+Pillow>=10.0.0
+
+# ── Web Crawling ──────────────────────────────────────────────
+httpx>=0.25.0              # Async HTTP client
+playwright>=1.40.0         # JS-rendered pages (run: playwright install chromium)
+beautifulsoup4>=4.12.0
+
+# ── Dataset / Storage ─────────────────────────────────────────
+PyYAML>=6.0
+tqdm>=4.65.0
+datasets>=2.14.0           # HuggingFace datasets (for to_hf_dataset())
+
+# ── ONNX Acceleration (optional but recommended for CPU) ──────
+onnxruntime>=1.16.0        # CPU: pip install onnxruntime
+# onnxruntime-gpu>=1.16.0  # GPU: pip install onnxruntime-gpu
+
+# ── Logging / Config ──────────────────────────────────────────
+# (stdlib only — logging, pathlib, json, asyncio, etc.)
+
+# ── Genesis v0.3 additions ──────────────────────────────────────────────
+# Dataset Intelligence Engine
+faiss-cpu>=1.7.4               # FAISS ANN index for embedding dedup + search
+
+# Evaluation Engine
+scipy>=1.11.0                  # sqrtm for FID computation
+torchvision>=0.15.0            # InceptionV3 for FID
+
+# Governance / Versioning (stdlib only — no additional deps needed)
+
+# Optional: LAION aesthetic predictor (auto-downloaded by AestheticScorer)
+# No pip install needed; MLP weights (~15MB) downloaded at runtime.
+
+# ── Genesis v0.4 additions ─────────────────────────────────────────────
+# API server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+python-multipart>=0.0.6     # form/file upload support
+
+# Model Platform
+optimum[onnxruntime]>=1.14.0  # ORT-accelerated pipelines (optional, for ONNX)
+psutil>=5.9.0                 # RAM detection in ModelRouter
+
+# Active Learning (no new deps — uses existing CLIP, crawler, dataset modules)

@@ -1,0 +1,173 @@
+
+# ================================================================
+# Genesis — Unified Generative AI System
+# Master Configuration File
+# ================================================================
+
+system:
+  name: "Genesis"
+  version: "0.2.0"
+  device: "auto"            # auto = cuda if available, else cpu
+  seed: 42
+  log_level: "INFO"
+  output_dir: "outputs"
+  compile_model: false       # torch.compile (PyTorch 2.0+)
+  mode: "full"               # full | cpu_only | gpu_only
+
+model_cache_dir: "model_cache"
+
+# ── VAE ──────────────────────────────────────────────────────────
+vae:
+  in_channels: 3
+  latent_channels: 4
+  base_channels: 128
+  channel_multipliers: [1, 2, 4, 4]
+  num_res_blocks: 2
+  attention_resolutions: [16]
+  dropout: 0.0
+  scale_factor: 0.18215
+  # Training
+  pretrained_id: "stabilityai/sd-vae-ft-mse"  # null to train from scratch
+  freeze_after_training: true
+
+# ── Diffusion U-Net ───────────────────────────────────────────────
+diffusion:
+  in_channels: 4            # Latent channels (= vae.latent_channels)
+  out_channels: 4
+  base_channels: 320
+  channel_multipliers: [1, 2, 4, 4]
+  num_res_blocks: 2
+  attention_resolutions: [4, 2, 1]
+  dropout: 0.1
+  context_dim: 768           # Text encoder output dim
+  timesteps: 1000
+  beta_schedule: "scaled_linear"   # linear | cosine | scaled_linear
+  beta_start: 0.00085
+  beta_end: 0.012
+  prediction_type: "epsilon"       # epsilon | v_prediction
+  # Flash attention (PyTorch 2.0+)
+  use_flash_attention: true
+
+# ── Text Encoder ──────────────────────────────────────────────────
+text_encoder:
+  model_id: "openai/clip-vit-large-patch14"
+  max_length: 77
+  output_dim: 768
+  freeze: true
+
+# ── LCM / Fast Generation ─────────────────────────────────────────
+lcm:
+  enabled: false            # Set true to use LCM instead of SD
+  model_id: "SimianLuo/LCM_Dreamshaper_v7"
+  num_inference_steps: 4
+  guidance_scale: 1.0        # LCM uses low guidance
+
+# ── Image Generation (CPU / pretrained) ───────────────────────────
+generation:
+  model_id: "runwayml/stable-diffusion-v1-5"
+  num_inference_steps: 20
+  guidance_scale: 7.5
+  width: 512
+  height: 512
+  img2img_strength: 0.75
+  torch_dtype: "float32"     # CPU requires float32
+  enable_attention_slicing: true
+  enable_vae_slicing: true
+  # ONNX acceleration
+  use_onnx: false
+  onnx_dir: "model_cache/onnx"
+
+# ── Captioning ────────────────────────────────────────────────────
+captioning:
+  model_id: "Salesforce/blip-image-captioning-base"
+  max_new_tokens: 50
+  num_beams: 4
+  batch_size: 8
+  # Upgrade option:
+  # model_id: "Salesforce/blip2-opt-2.7b"
+
+# ── Crawler ───────────────────────────────────────────────────────
+crawler:
+  download_dir: "outputs/crawled_images"
+  max_images_per_query: 50
+  min_image_size: 64
+  max_image_size: 4096
+  allowed_formats: ["jpg", "jpeg", "png", "webp"]
+  timeout_seconds: 30
+  concurrent_downloads: 8
+  user_agent: "Mozilla/5.0 (compatible; Genesis-Crawler/0.2)"
+
+# ── Dataset ───────────────────────────────────────────────────────
+dataset:
+  root: "outputs/dataset"
+  images_dir: "images"
+  captions_file: "captions.json"
+  metadata_file: "metadata.json"
+  index_file: "index.jsonl"
+  dedup_threshold: 0.95
+  min_caption_length: 10
+  max_caption_length: 200
+  image_format: "png"
+  image_size: [512, 512]
+  batch_size: 4
+  num_workers: 4
+
+# ── Prompt Templates ──────────────────────────────────────────────
+prompts:
+  templates_file: "configs/prompt_templates.yaml"
+  categories: [landscape, portrait, architecture, nature, abstract, animals]
+
+# ── VAE Training ─────────────────────────────────────────────────
+vae_training:
+  epochs: 50
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-6
+  batch_size: 8
+  kl_weight: 1.0e-6
+  perceptual_weight: 1.0
+  recon_loss: "l1"           # l1 | l2 | ssim
+  use_perceptual_loss: true
+  use_adversarial_loss: false  # PatchGAN (requires training discriminator too)
+  warmup_steps: 100
+  save_every_epochs: 5
+  log_images_every: 500
+
+# ── Diffusion Training ────────────────────────────────────────────
+training:
+  epochs: 100
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-2
+  warmup_steps: 500
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  max_grad_norm: 1.0
+  mixed_precision: "fp16"    # no | fp16 | bf16
+  ema_decay: 0.9999
+  cfg_dropout_prob: 0.1
+  save_every_steps: 500
+  log_every_steps: 50
+  val_every_steps: 1000
+  resume_from: null
+
+# ── Inference ─────────────────────────────────────────────────────
+inference:
+  sampler: "ddim"            # ddpm | ddim
+  num_inference_steps: 50
+  guidance_scale: 7.5
+  eta: 0.0                   # DDIM stochasticity (0=deterministic)
+  img2img_strength: 0.8
+
+# ── Automation ────────────────────────────────────────────────────
+automation:
+  cycle_interval_seconds: 0
+  max_cycles: 1
+  tasks:
+    generate_images: true
+    crawl_images: true
+    caption_images: true
+    build_dataset: true
+    train_vae: false          # Trigger VAE training after N cycles
+    train_diffusion: false    # Trigger diffusion training after N cycles
+  generate_count: 5
+  crawl_queries: 3
+  train_every_n_cycles: 10   # Auto-train after accumulating enough data
