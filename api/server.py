@@ -73,7 +73,7 @@ if _FASTAPI_OK:
         negative_prompt: str = Field("", max_length=500)
         width: int = Field(512, ge=256, le=1024)
         height: int = Field(512, ge=256, le=1024)
-        quality_tier: str = Field("fast", regex="^(fast|balanced|high)$")
+        quality_tier: str = Field("fast", pattern="^(fast|balanced|high)$")
         steps: Optional[int] = Field(None, ge=1, le=100)
         guidance: Optional[float] = Field(None, ge=0.0, le=30.0)
         seed: Optional[int] = None
@@ -97,7 +97,7 @@ if _FASTAPI_OK:
 
     class FeedbackRequest(BaseModel):
         request_id: str
-        feedback_type: str = Field(..., regex="^(rating|thumbs|category|correction|report)$")
+        feedback_type: str = Field(..., pattern="^(rating|thumbs|category|correction|report)$")
         rating: Optional[int] = Field(None, ge=1, le=5)
         thumbs_up: Optional[bool] = None
         category: Optional[str] = None
