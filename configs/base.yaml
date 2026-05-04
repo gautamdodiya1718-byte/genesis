@@ -171,3 +171,16 @@ automation:
   generate_count: 5
   crawl_queries: 3
   train_every_n_cycles: 10   # Auto-train after accumulating enough data
+
+
+# ── Local LLM (CPU-first) ─────────────────────────────────────
+llm:
+  enabled: false
+  backend: "llama_cpp"      # llama_cpp | airllm
+  model_path: ""             # local GGUF path for llama_cpp
+  model_id: "Qwen/Qwen2.5-3B-Instruct"   # used by airllm backend
+  max_seq_len: 1024
+  max_new_tokens: 128
+  temperature: 0.7
+  top_p: 0.9
+  n_threads: null
