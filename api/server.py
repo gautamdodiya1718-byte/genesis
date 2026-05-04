@@ -73,7 +73,7 @@ if _FASTAPI_OK:
         negative_prompt: str = Field("", max_length=500)
         width: int = Field(512, ge=256, le=1024)
         height: int = Field(512, ge=256, le=1024)
-        quality_tier: str = Field("fast", regex="^(fast|balanced|high)$")
+        quality_tier: str = Field("fast", pattern="^(fast|balanced|high)$")
         steps: Optional[int] = Field(None, ge=1, le=100)
         guidance: Optional[float] = Field(None, ge=0.0, le=30.0)
         seed: Optional[int] = None
@@ -97,7 +97,7 @@ if _FASTAPI_OK:
 
     class FeedbackRequest(BaseModel):
         request_id: str
-        feedback_type: str = Field(..., regex="^(rating|thumbs|category|correction|report)$")
+        feedback_type: str = Field(..., pattern="^(rating|thumbs|category|correction|report)$")
         rating: Optional[int] = Field(None, ge=1, le=5)
         thumbs_up: Optional[bool] = None
         category: Optional[str] = None
@@ -115,6 +115,22 @@ if _FASTAPI_OK:
         fallback_used: bool = False
         error: Optional[str] = None
 
+
+    class LLMGenerateRequest(BaseModel):
+        prompt: str = Field(..., min_length=1, max_length=4000)
+        max_new_tokens: int = Field(128, ge=1, le=1024)
+        temperature: float = Field(0.7, ge=0.0, le=2.0)
+        top_p: float = Field(0.9, ge=0.0, le=1.0)
+
+
+    class LLMGenerateResponse(BaseModel):
+        status: str
+        output_text: str = ""
+        model_used: str = ""
+        backend: str = ""
+        duration_s: float = 0.0
+        error: Optional[str] = None
+
     # ── App factory ───────────────────────────────────────────
 
     def create_app(
@@ -122,6 +138,7 @@ if _FASTAPI_OK:
         scheduler: "BatchScheduler",
         prompt_logger: "PromptLogger",
         feedback_store: "FeedbackStore",
+        text_manager: Optional[Any] = None,
         images_dir: str = "outputs/api_images",
         api_key: Optional[str] = None,
         cors_origins: List[str] = ["*"],
@@ -216,6 +233,35 @@ if _FASTAPI_OK:
                 },
                 "pipeline": pipeline.status(),
             }
+
+
+        @app.get("/llm/status")
+        def llm_status(_=Depends(verify_token)):
+            if text_manager is None:
+                return {"enabled": False, "status": "disabled"}
+            return {"enabled": True, **text_manager.status()}
+
+        @app.get("/llm/models")
+        def llm_models(_=Depends(verify_token)):
+            return {
+                "available_backends": ["llama_cpp", "airllm"],
+                "configured_backend": getattr(text_manager, "backend", None),
+            }
+
+        @app.post("/llm/generate", response_model=LLMGenerateResponse)
+        def llm_generate(req: LLMGenerateRequest, _=Depends(verify_token)):
+            if text_manager is None:
+                raise HTTPException(status_code=503, detail="LLM module disabled")
+            try:
+                result = text_manager.generate(
+                    prompt=req.prompt,
+                    max_new_tokens=req.max_new_tokens,
+                    temperature=req.temperature,
+                    top_p=req.top_p,
+                )
+                return LLMGenerateResponse(**result)
+            except Exception as e:
+                return LLMGenerateResponse(status="failed", error=str(e))
 
         @app.post("/generate", response_model=GenerateResponse)
         async def generate(
@@ -391,7 +437,7 @@ if _FASTAPI_OK:
 
             def _run_expansion():
                 try:
-                    from core.config import GenesisConfig
+                    from core.config import load_config
                     from dataset.active_learning.dataset_expander import DatasetExpander
                     cfg = GenesisConfig.load("configs/base.yaml")
                     expander = DatasetExpander.from_config(cfg)
@@ -426,11 +472,11 @@ if _FASTAPI_OK:
         reload: bool = False,
     ) -> None:
         import uvicorn
-        from core.config import GenesisConfig
+        from core.config import load_config
         from core.logger import setup_logging
 
         setup_logging()
-        cfg = GenesisConfig.load(config_path)
+        cfg = load_config(config_path)
 
         from inference.engine.model_router import ModelRouter
         from inference.engine.optimized_pipeline import OptimizedPipeline
@@ -447,6 +493,11 @@ if _FASTAPI_OK:
         if api_key:
             logger.info("API key authentication enabled")
 
+        text_manager = None
+        if cfg.get_nested("llm.enabled", False):
+            from llm import TextModelManager
+            text_manager = TextModelManager(cfg)
+
         app = create_app(
             pipeline=pipeline,
             scheduler=scheduler,
@@ -458,6 +509,7 @@ if _FASTAPI_OK:
             ),
             images_dir=cfg.get_nested("api.images_dir", "outputs/api_images"),
             api_key=api_key,
+            text_manager=text_manager,
         )
 
         logger.info(f"Starting Genesis API on http://{host}:{port}")
