@@ -57,3 +57,9 @@ optimum[onnxruntime]>=1.14.0  # ORT-accelerated pipelines (optional, for ONNX)
 psutil>=5.9.0                 # RAM detection in ModelRouter
 
 # Active Learning (no new deps — uses existing CLIP, crawler, dataset modules)
+
+
+# ── Local LLM (CPU-first) ─────────────────────────────────────
+llama-cpp-python>=0.2.90
+airllm>=2.11.0
+sentencepiece>=0.1.99
